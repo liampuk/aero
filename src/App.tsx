@@ -1,11 +1,12 @@
-import { Aero } from "./Aero"
+import { RouterProvider } from "react-router-dom"
 import { GlobalStyle } from "./globalStyle"
+import { router } from "./router"
 
 function App() {
   return (
     <>
       <GlobalStyle />
-      <Aero />
+      <RouterProvider router={router} />
     </>
   )
 }

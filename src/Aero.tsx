@@ -5,7 +5,6 @@ import { useWindowSize } from "./hooks/general"
 export const Aero: FC = () => {
   const mouseY = useRef(0)
   const offsetY = useRef(0)
-  const [shadePos, setShadePos] = useState(0)
 
   const [documentWidth, documentHeight] = useWindowSize()
   const portrait = documentWidth < documentHeight * 0.75
@@ -20,14 +19,21 @@ export const Aero: FC = () => {
   const documentWidthPixel = documentWidth * pixelRatio
   const documentHeightPixel = documentHeight * pixelRatio
   const minShadeSize = windowHeight / 13
+  const [shadePos, setShadePos] = useState(windowHeight - minShadeSize + 1)
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  const dragMouseDown = (e: MouseEvent) => {
+  const mouseStart = (e: MouseEvent) => {
     e.preventDefault()
-    mouseY.current = e.clientY
-    document.onmouseup = closeDragElement
-    document.onmousemove = elementDrag
+    mouseY.current = e?.clientY
+    document.onmouseup = mouseStop
+    document.onmousemove = mouseDrag
+  }
+
+  const touchStart = (e: TouchEvent) => {
+    mouseY.current = e?.touches[0].clientY
+    document.ontouchend = mouseStop
+    document.ontouchmove = elementTouchDrag
   }
 
   const updateShadePos = () => {
@@ -41,16 +47,24 @@ export const Aero: FC = () => {
     })
   }
 
-  const elementDrag = (e: MouseEvent) => {
+  const mouseDrag = (e: MouseEvent) => {
     e.preventDefault()
     offsetY.current = mouseY.current - e.clientY
     mouseY.current = e.clientY
     updateShadePos()
   }
 
-  const closeDragElement = () => {
+  const elementTouchDrag = (e: TouchEvent) => {
+    offsetY.current = mouseY.current - e.touches[0].clientY
+    mouseY.current = e.touches[0].clientY
+    updateShadePos()
+  }
+
+  const mouseStop = () => {
     document.onmouseup = null
     document.onmousemove = null
+    document.ontouchend = null
+    document.ontouchmove = null
   }
 
   const updateLightProjection = () => {
@@ -62,45 +76,6 @@ export const Aero: FC = () => {
       const height = Math.round(devicePixelRatio * rect.bottom) - Math.round(devicePixelRatio * rect.top)
       canvas.width = width
       canvas.height = height
-
-      ctx.beginPath()
-      ctx.moveTo(0, 0)
-      ctx.lineTo(width, 0)
-      ctx.lineTo(width, height)
-
-      //TODO
-      ctx.lineTo(
-        width / 2 +
-          windowWidthPixel / 2 -
-          windowRadiusPixel +
-          windowRadiusPixel * Math.cos(315) -
-          (height - (height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315))),
-        height
-      )
-
-      ctx.lineTo(
-        width / 2 + windowWidthPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.cos(315),
-        height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315)
-      )
-      ctx.lineTo(
-        width / 2 - windowWidthPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.cos(315),
-        height / 2 - windowHeightPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.sin(315) + shadePos * 2
-      )
-
-      ctx.lineTo(
-        width / 2 -
-          windowWidthPixel / 2 +
-          windowRadiusPixel -
-          windowRadiusPixel * Math.cos(315) -
-          (height - (height / 2 - windowHeightPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.sin(315))),
-        height + shadePos * 2
-      )
-
-      ctx.lineTo(0, height)
-
-      ctx.closePath()
-      ctx.fillStyle = "rgb(235, 232, 223)"
-      ctx.fill()
 
       const getLeftX = () => {
         const h1 = width / 2 - windowWidthPixel / 2 + windowRadiusPixel
@@ -135,26 +110,41 @@ export const Aero: FC = () => {
       }
 
       ctx.beginPath()
-      const { x, y } = getLeftX()
-      ctx.rect(x - 5, y - 5, 10, 10)
-      ctx.fillStyle = "blue"
-      ctx.fill()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(width, 0)
+      ctx.lineTo(width, height)
 
-      ctx.beginPath()
-      const { x: x2, y: y2 } = getRightX()
-      ctx.rect(x2 - 5, y2 - 5, 10, 10)
-      ctx.fillStyle = "green"
-      ctx.fill()
-
-      ctx.beginPath()
-      ctx.arc(
-        width / 2 + windowWidthPixel / 2 - windowRadiusPixel,
-        height / 2 + windowHeightPixel / 2 - windowRadiusPixel,
-        windowRadius * 2,
-        0,
-        2 * Math.PI
+      //TODO
+      ctx.lineTo(
+        width / 2 +
+          windowWidthPixel / 2 -
+          windowRadiusPixel +
+          windowRadiusPixel * Math.cos(315) -
+          (height - (height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315))),
+        height
       )
-      ctx.stroke()
+
+      const { x: x1, y: y1 } = getRightX()
+      const { x: x2, y: y2 } = getLeftX()
+
+      ctx.lineTo(x1, y1)
+      ctx.lineTo(x2, y2)
+
+      ctx.lineTo(
+        width / 2 -
+          windowWidthPixel / 2 +
+          windowRadiusPixel -
+          windowRadiusPixel * Math.cos(315) -
+          (height - (height / 2 - windowHeightPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.sin(315))),
+        height + shadePos * 2
+      )
+
+      ctx.lineTo(0, height)
+
+      ctx.closePath()
+      // ctx.fillStyle = "rgb(240, 236, 228)"
+      ctx.fillStyle = "white"
+      ctx.fill()
     }
   }
 
@@ -162,19 +152,24 @@ export const Aero: FC = () => {
 
   useEffect(() => {
     updateLightProjection()
+
+    // Workaround for chrome issue: https://issues.chromium.org/issues/328755781
+    document.addEventListener("visibilitychange", function () {
+      updateLightProjection()
+    })
   }, [])
 
   return (
     <Wrapper>
-      {/* <BrightBackground /> */}
+      <BrightBackground />
       <BackgroundColour />
       <BackgroundCanvas ref={bgCanvasRef} />
 
       <Window $width={windowWidth} $height={windowHeight} $radius={windowRadius}>
-        <Shade $offset={minShadeSize + shadePos} onMouseDown={(e) => dragMouseDown(e)}>
-          <ShadePull />
+        <Shade $offset={minShadeSize + shadePos} onMouseDown={(e: any) => mouseStart(e)} onTouchStart={(e: any) => touchStart(e)}>
+          <ShadePull $margin={minShadeSize / 3 + 2} />
         </Shade>
-        {/* <BrightBackground /> */}
+        <BrightBackground />
         <Background />
       </Window>
     </Wrapper>
@@ -194,22 +189,14 @@ const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
   top: 0;
   bottom: 0;
   margin: auto;
-  opacity: 0.5;
+  /* opacity: 0.5; */
 `
 
 const BackgroundCanvas = styled.canvas`
   height: 100vh;
   width: 100vw;
   position: fixed;
-`
-
-const TextBox = styled.div<{ $top?: string; $bottom?: string; $left?: string; $right?: string; $margin: string }>`
-  position: absolute;
-  ${({ $top }) => $top && `top: ${$top}px;`}
-  ${({ $bottom }) => $bottom && `bottom: ${$bottom}px;`}
-  ${({ $left }) => $left && `left: ${$left}px;`}
-  ${({ $right }) => $right && `right: ${$right}px;`}
-  ${({ $margin }) => $margin && `margin: ${$margin};`}
+  /* opacity: 0.5; */
 `
 
 const BrightBackground = styled.div`
@@ -218,13 +205,6 @@ const BrightBackground = styled.div`
   height: 100%;
   width: 100%;
   position: absolute;
-`
-
-const Text = styled.p<{ $size: number }>`
-  font-family: "Lora", serif;
-  font-size: ${({ $size }) => $size}px;
-  color: grey;
-  /* display: none; */
 `
 
 const Wrapper = styled.div`
@@ -236,9 +216,9 @@ const Wrapper = styled.div`
 const BackgroundColour = styled.div`
   width: 100%;
   height: 100%;
-  /* background: linear-gradient(20deg, rgba(235, 232, 223, 1) 10%, rgba(235, 232, 223, 0) 100%); */
-  background-color: rgb(255, 0, 0);
-  /* background-size: 65% 100%; */
+  /* background: linear-gradient(20deg, #a59170 0%, #ff8000 100%); */
+  background-color: rgba(255, 184, 0, 0.4);
+  background-size: 65% 100%;
   /* mix-blend-mode: multiply; */
   position: fixed;
 `
@@ -257,12 +237,12 @@ const Shade = styled.div<{ $offset: number }>`
   }
 `
 
-const ShadePull = styled.div`
+const ShadePull = styled.div<{ $margin: number }>`
   height: 4px;
   width: 30%;
   position: absolute;
   left: 35%;
-  bottom: 24px;
+  bottom: ${({ $margin }) => $margin}px;
   background-color: #c1c1c1;
   border-radius: 2px;
 `
