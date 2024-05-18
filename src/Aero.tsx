@@ -1,10 +1,25 @@
 import { FC, useEffect, useRef, useState } from "react"
 import styled from "styled-components"
+import { useWindowSize } from "./hooks/general"
 
 export const Aero: FC = () => {
   const mouseY = useRef(0)
   const offsetY = useRef(0)
   const [shadePos, setShadePos] = useState(0)
+
+  const [documentWidth, documentHeight] = useWindowSize()
+  const portrait = documentWidth < documentHeight * 0.75
+  const pixelRatio = window.devicePixelRatio
+
+  const windowWidth = portrait ? documentWidth * 0.9 : documentHeight * 0.8 * 0.8
+  const windowHeight = windowWidth * 1.3
+  const windowRadius = windowWidth * 0.4
+  const windowWidthPixel = windowWidth * pixelRatio
+  const windowHeightPixel = windowHeight * pixelRatio
+  const windowRadiusPixel = windowRadius * pixelRatio
+  const documentWidthPixel = documentWidth * pixelRatio
+  const documentHeightPixel = documentHeight * pixelRatio
+  const minShadeSize = windowHeight / 13
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -17,10 +32,10 @@ export const Aero: FC = () => {
 
   const updateShadePos = () => {
     setShadePos((prev) => {
-      if (prev - offsetY.current < 16) {
-        return 16
-      } else if (prev - offsetY.current > 755) {
-        return 755
+      if (prev - offsetY.current < 0) {
+        return 0
+      } else if (prev - offsetY.current > windowHeight - minShadeSize + 1) {
+        return windowHeight - minShadeSize + 1
       }
       return prev - offsetY.current
     })
@@ -38,7 +53,7 @@ export const Aero: FC = () => {
     document.onmousemove = null
   }
 
-  useEffect(() => {
+  const updateLightProjection = () => {
     const canvas = bgCanvasRef.current
     const ctx = canvas?.getContext("2d")
     if (canvas && ctx) {
@@ -47,66 +62,140 @@ export const Aero: FC = () => {
       const height = Math.round(devicePixelRatio * rect.bottom) - Math.round(devicePixelRatio * rect.top)
       canvas.width = width
       canvas.height = height
-      // ctx.beginPath()
-      // ctx.moveTo(0, 0)
-      // ctx.lineTo(width, 0)
-      // ctx.lineTo(width, height)
-      // ctx.fillStyle = "yellow"
-      // ctx.clip()
-
-      // ctx.beginPath()
-      // ctx.rect(0, 0, width, height)
-      // ctx.fillStyle = "blue"
-      // ctx.fill()
 
       ctx.beginPath()
       ctx.moveTo(0, 0)
       ctx.lineTo(width, 0)
       ctx.lineTo(width, height)
-      // ctx.lineTo(0, height)
 
-      ctx.lineTo(1900, height)
-      ctx.lineTo(2200, height - 300)
-      ctx.lineTo(1291, 265)
-      ctx.lineTo(0, height - 300)
+      //TODO
+      ctx.lineTo(
+        width / 2 +
+          windowWidthPixel / 2 -
+          windowRadiusPixel +
+          windowRadiusPixel * Math.cos(315) -
+          (height - (height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315))),
+        height
+      )
+
+      ctx.lineTo(
+        width / 2 + windowWidthPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.cos(315),
+        height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315)
+      )
+      ctx.lineTo(
+        width / 2 - windowWidthPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.cos(315),
+        height / 2 - windowHeightPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.sin(315) + shadePos * 2
+      )
+
+      ctx.lineTo(
+        width / 2 -
+          windowWidthPixel / 2 +
+          windowRadiusPixel -
+          windowRadiusPixel * Math.cos(315) -
+          (height - (height / 2 - windowHeightPixel / 2 + windowRadiusPixel - windowRadiusPixel * Math.sin(315))),
+        height + shadePos * 2
+      )
+
+      ctx.lineTo(0, height)
 
       ctx.closePath()
       ctx.fillStyle = "rgb(235, 232, 223)"
       ctx.fill()
 
-      // ctx.globalCompositeOperation = "destination-out"
-      // ctx.clip()
+      const getLeftX = () => {
+        const h1 = width / 2 - windowWidthPixel / 2 + windowRadiusPixel
+        const k1 = height / 2 - windowHeightPixel / 2 + windowRadiusPixel
+        const h2 = width / 2 - windowWidthPixel / 2 + windowRadiusPixel
+        const k2 = height / 2 + windowHeightPixel / 2 - windowRadiusPixel
+        const y = documentHeightPixel / 2 - windowHeightPixel / 2 + (shadePos + minShadeSize) * devicePixelRatio
+        let x
+        if (y < k1) {
+          x = h1 - Math.sqrt(Math.pow(windowRadiusPixel, 2) - Math.pow(k1 - y, 2))
+        } else if (y < k2) {
+          x = documentWidthPixel / 2 - windowWidthPixel / 2
+        } else {
+          x = h2 - Math.sqrt(Math.pow(windowRadiusPixel, 2) - Math.pow(y - k2, 2))
+        }
+        return { x, y }
+      }
+
+      const getRightX = () => {
+        const h = width / 2 + windowWidthPixel / 2 - windowRadiusPixel
+        const k = height / 2 + windowHeightPixel / 2 - windowRadiusPixel
+        const y = documentHeightPixel / 2 - windowHeightPixel / 2 + (shadePos + minShadeSize) * devicePixelRatio
+        const cornerY = height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315)
+        if (y < cornerY) {
+          return {
+            x: width / 2 + windowWidthPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.cos(315),
+            y: height / 2 + windowHeightPixel / 2 - windowRadiusPixel + windowRadiusPixel * Math.sin(315),
+          }
+        } else {
+          return { x: h + Math.sqrt(Math.pow(windowRadiusPixel, 2) - Math.pow(k - y, 2)), y }
+        }
+      }
+
+      ctx.beginPath()
+      const { x, y } = getLeftX()
+      ctx.rect(x - 5, y - 5, 10, 10)
+      ctx.fillStyle = "blue"
+      ctx.fill()
+
+      ctx.beginPath()
+      const { x: x2, y: y2 } = getRightX()
+      ctx.rect(x2 - 5, y2 - 5, 10, 10)
+      ctx.fillStyle = "green"
+      ctx.fill()
+
+      ctx.beginPath()
+      ctx.arc(
+        width / 2 + windowWidthPixel / 2 - windowRadiusPixel,
+        height / 2 + windowHeightPixel / 2 - windowRadiusPixel,
+        windowRadius * 2,
+        0,
+        2 * Math.PI
+      )
+      ctx.stroke()
     }
+  }
+
+  updateLightProjection()
+
+  useEffect(() => {
+    updateLightProjection()
   }, [])
 
   return (
     <Wrapper>
-      <BrightBackground />
+      {/* <BrightBackground /> */}
       <BackgroundColour />
       <BackgroundCanvas ref={bgCanvasRef} />
-      <TextBox $top="0" $left="0" $margin="32px">
-        <Text $size={16}># BA 1506</Text>
-      </TextBox>
-      <TextBox $top="0" $right="0" $margin="32px">
-        <Text $size={16}>London ◯ New York</Text>
-      </TextBox>
-      <TextBox $bottom="0" $left="0" $margin="32px">
-        <Text $size={16}>Flight time remaining: 2 hours, 34 minutes</Text>
-      </TextBox>
 
-      <TextBox $bottom="0" $right="0" $margin="32px">
-        <Text $size={16}>◯ About</Text>
-      </TextBox>
-      <Window>
-        <Shade $offset={shadePos} onMouseDown={(e) => dragMouseDown(e)}>
+      <Window $width={windowWidth} $height={windowHeight} $radius={windowRadius}>
+        <Shade $offset={minShadeSize + shadePos} onMouseDown={(e) => dragMouseDown(e)}>
           <ShadePull />
         </Shade>
-        <BrightBackground />
+        {/* <BrightBackground /> */}
         <Background />
       </Window>
     </Wrapper>
   )
 }
+
+const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
+  height: ${({ $height }) => $height}px;
+  width: ${({ $width }) => $width}px;
+  border-radius: ${({ $radius }) => $radius}px;
+  position: absolute;
+  background-color: white;
+  overflow: hidden;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  opacity: 0.5;
+`
 
 const BackgroundCanvas = styled.canvas`
   height: 100vh;
@@ -147,27 +236,11 @@ const Wrapper = styled.div`
 const BackgroundColour = styled.div`
   width: 100%;
   height: 100%;
-  background: linear-gradient(20deg, rgba(235, 232, 223, 1) 10%, rgba(235, 232, 223, 0) 100%);
-  /* background-color: rgb(235, 232, 223); */
+  /* background: linear-gradient(20deg, rgba(235, 232, 223, 1) 10%, rgba(235, 232, 223, 0) 100%); */
+  background-color: rgb(255, 0, 0);
   /* background-size: 65% 100%; */
   /* mix-blend-mode: multiply; */
   position: fixed;
-`
-
-const Window = styled.div`
-  max-height: 85%;
-  max-width: 90%;
-  aspect-ratio: 3 / 4;
-  position: absolute;
-  background-color: white;
-  border-radius: 250px;
-  overflow: hidden;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  margin: auto;
 `
 
 const Shade = styled.div<{ $offset: number }>`
@@ -175,7 +248,7 @@ const Shade = styled.div<{ $offset: number }>`
   width: 100%;
   position: absolute;
   cursor: grab;
-  height: ${({ $offset }) => 60 + $offset}px;
+  height: ${({ $offset }) => $offset}px;
   z-index: 1;
   margin-top: -1px;
 
