@@ -71,11 +71,17 @@ export const Aero: FC = () => {
     const canvas = bgCanvasRef.current
     const ctx = canvas?.getContext("2d")
     if (canvas && ctx) {
-      const rect = canvas.getBoundingClientRect()
-      const width = Math.round(devicePixelRatio * rect.right) - Math.round(devicePixelRatio * rect.left)
-      const height = Math.round(devicePixelRatio * rect.bottom) - Math.round(devicePixelRatio * rect.top)
+      const width = documentWidthPixel
+      const height = documentHeightPixel
       canvas.width = width
       canvas.height = height
+
+      if (shadePos === windowHeight - minShadeSize + 1) {
+        ctx.rect(0, 0, width, height)
+        ctx.fillStyle = "white"
+        ctx.fill()
+        return
+      }
 
       const getLeftX = () => {
         const h1 = width / 2 - windowWidthPixel / 2 + windowRadiusPixel
@@ -193,15 +199,15 @@ const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
 `
 
 const BackgroundCanvas = styled.canvas`
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   position: fixed;
   /* opacity: 0.5; */
 `
 
 const BrightBackground = styled.div`
   background-image: url("hdr.avif");
-  background-size: 20000px;
+  background-size: 20000px 20000px;
   height: 100%;
   width: 100%;
   position: absolute;

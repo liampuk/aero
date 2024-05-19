@@ -8,6 +8,7 @@ export const GlobalStyle = createGlobalStyle`
     padding: 0;
     margin: 0;
     overflow: scroll;
+    overscroll-behavior: none;
   }
 
   p {
