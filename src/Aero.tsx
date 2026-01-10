@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef, useState } from "react"
+import { FC, MouseEvent, TouchEvent, useCallback, useEffect, useRef, useState } from "react"
 import styled from "styled-components"
 import { useWindowSize } from "./hooks/general"
 
@@ -23,14 +23,14 @@ export const Aero: FC = () => {
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  const mouseStart = (e: MouseEvent) => {
+  const mouseStart = (e: MouseEvent<Element>) => {
     e.preventDefault()
     mouseY.current = e?.clientY
     document.onmouseup = mouseStop
     document.onmousemove = mouseDrag
   }
 
-  const touchStart = (e: TouchEvent) => {
+  const touchStart = (e: TouchEvent<HTMLDivElement>) => {
     mouseY.current = e?.touches[0].clientY
     document.ontouchend = mouseStop
     document.ontouchmove = elementTouchDrag
@@ -47,14 +47,14 @@ export const Aero: FC = () => {
     })
   }
 
-  const mouseDrag = (e: MouseEvent) => {
+  const mouseDrag = (e: globalThis.MouseEvent) => {
     e.preventDefault()
     offsetY.current = mouseY.current - e.clientY
     mouseY.current = e.clientY
     updateShadePos()
   }
 
-  const elementTouchDrag = (e: TouchEvent) => {
+  const elementTouchDrag = (e: globalThis.TouchEvent) => {
     offsetY.current = mouseY.current - e.touches[0].clientY
     mouseY.current = e.touches[0].clientY
     updateShadePos()
@@ -67,7 +67,7 @@ export const Aero: FC = () => {
     document.ontouchmove = null
   }
 
-  const updateLightProjection = () => {
+  const updateLightProjection = useCallback(() => {
     const canvas = bgCanvasRef.current
     const ctx = canvas?.getContext("2d")
     if (canvas && ctx) {
@@ -163,7 +163,16 @@ export const Aero: FC = () => {
       ctx.fillStyle = "white"
       ctx.fill()
     }
-  }
+  }, [
+    documentHeightPixel,
+    documentWidthPixel,
+    minShadeSize,
+    shadePos,
+    windowHeight,
+    windowHeightPixel,
+    windowRadiusPixel,
+    windowWidthPixel,
+  ])
 
   // updateLightProjection()
 
@@ -174,7 +183,7 @@ export const Aero: FC = () => {
     document.addEventListener("visibilitychange", function () {
       updateLightProjection()
     })
-  }, [shadePos, documentWidthPixel, documentHeightPixel])
+  }, [shadePos, documentWidthPixel, documentHeightPixel, updateLightProjection])
 
   return (
     <Wrapper>
@@ -183,7 +192,7 @@ export const Aero: FC = () => {
       <BackgroundCanvas ref={bgCanvasRef} />
 
       <Window $width={windowWidth} $height={windowHeight} $radius={windowRadius}>
-        <Shade $offset={minShadeSize + shadePos} onMouseDown={(e: any) => mouseStart(e)} onTouchStart={(e: any) => touchStart(e)}>
+        <Shade $offset={minShadeSize + shadePos} onMouseDown={(e) => mouseStart(e)} onTouchStart={(e) => touchStart(e)}>
           <ShadePull $margin={minShadeSize / 3 + 2} />
         </Shade>
         <BrightBackground />
