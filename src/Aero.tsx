@@ -193,6 +193,11 @@ export const Aero: FC = () => {
 
       <Window $width={windowWidth} $height={windowHeight} $radius={windowRadius}>
         <Shade $offset={minShadeSize + shadePos} onMouseDown={(e) => mouseStart(e)} onTouchStart={(e) => touchStart(e)}>
+          <Text>
+            Lift shade during
+            <br />
+            takeoff and landing
+          </Text>
           <ShadePull $margin={minShadeSize / 3 + 2} />
         </Shade>
         <BrightBackground />
@@ -235,6 +240,7 @@ const WindowBorder = styled.div<{ $width: number; $height: number; $radius: numb
   margin: auto;
   pointer-events: none;
   border: 1px solid #cacaca;
+  outline: 32px solid rgba(127, 127, 127, 0.1);
   filter: blur(1px);
 `
 
@@ -397,6 +403,19 @@ const Shade = styled.div<{ $offset: number }>`
   &:active {
     cursor: grabbing;
   }
+`
+
+const Text = styled.p`
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 4px;
+  border-radius: 4px;
+  bottom: 32px;
+  font-size: 11px;
+  color: #7b7b7b;
+  background-color: #e3e3e3;
 `
 
 const ShadePull = styled.div<{ $margin: number }>`
