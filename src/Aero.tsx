@@ -76,6 +76,11 @@ export const Aero: FC = () => {
       canvas.width = width
       canvas.height = height
 
+      const scale = 1 / 1.2 // ≈0.909
+      // const dx = (canvas.width - canvas.width * scale) / 2
+      // const dy = (canvas.height - canvas.height * scale) / 2
+      // ctx.setTransform(scale, 0, 0, scale, dx, dy)
+
       if (shadePos === windowHeight - minShadeSize + 1) {
         ctx.rect(0, 0, width, height)
         ctx.fillStyle = "white"
@@ -120,6 +125,12 @@ export const Aero: FC = () => {
       ctx.lineTo(width, 0)
       ctx.lineTo(width, height)
 
+      const scaleHeight = height * scale
+      const scaleWidth = width * scale
+      const dx = (width - scaleWidth) / 2
+      const dy = (height - scaleHeight) / 2
+      ctx.setTransform(scale, 0, 0, scale, dx, dy)
+
       //TODO
       ctx.lineTo(
         width / 2 +
@@ -154,7 +165,7 @@ export const Aero: FC = () => {
     }
   }
 
-  updateLightProjection()
+  // updateLightProjection()
 
   useEffect(() => {
     updateLightProjection()
@@ -163,7 +174,7 @@ export const Aero: FC = () => {
     document.addEventListener("visibilitychange", function () {
       updateLightProjection()
     })
-  }, [])
+  }, [shadePos, documentWidthPixel, documentHeightPixel])
 
   return (
     <Wrapper>
@@ -176,11 +187,47 @@ export const Aero: FC = () => {
           <ShadePull $margin={minShadeSize / 3 + 2} />
         </Shade>
         <BrightBackground />
-        <Background />
+        <Background>
+          <Clouds autoPlay loop muted playsInline style={{ height: "100%", width: "100%", objectFit: "cover" }}>
+            {/* <source src="https://www.commuting.to/videos/clouds.mp4" type="video/mp4" /> */}
+            <source src="/aero/clouds2.mp4" type="video/mp4" />
+            {/* <source src="https://videos.pexeals.com/video-files/10995726/10995726-uhd_1440_2560_30fps.mp4" type="video/mp4" /> */}
+          </Clouds>
+        </Background>
+        <WindowOverlay $radius={windowRadius} />
       </Window>
+      <WindowBorder $width={windowWidth} $height={windowHeight} $radius={windowRadius} />
+      <Overlay />
     </Wrapper>
   )
 }
+
+const WindowOverlay = styled.div<{ $radius: number }>`
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 9999;
+  border-radius: ${({ $radius }) => $radius}px;
+  box-shadow: inset 0 0px 80px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+`
+
+const WindowBorder = styled.div<{ $width: number; $height: number; $radius: number }>`
+  height: ${({ $height }) => $height}px;
+  width: ${({ $width }) => $width}px;
+  border-radius: ${({ $radius }) => $radius}px;
+  position: absolute;
+  overflow: hidden;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  pointer-events: none;
+  border: 1px solid #cacaca;
+  filter: blur(1px);
+`
 
 const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
   height: ${({ $height }) => $height}px;
@@ -195,14 +242,19 @@ const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
   top: 0;
   bottom: 0;
   margin: auto;
+  filter: blur(0.5px) drop-shadow(0px 0px 32px rgba(0, 0, 0, 0.4));
   /* opacity: 0.5; */
 `
 
 const BackgroundCanvas = styled.canvas`
-  height: 100%;
-  width: 100%;
-  position: fixed;
+  height: 120vh;
+  width: 120vw;
+  margin-left: -5vw;
+  margin-top: -5vh;
+  position: absolute;
   /* opacity: 0.5; */
+  filter: blur(10px);
+  inset: 0;
 `
 
 const BrightBackground = styled.div`
@@ -214,23 +266,116 @@ const BrightBackground = styled.div`
 `
 
 const Wrapper = styled.div`
-  width: 100%;
-  height: 100%;
+  width: 110vw;
+  height: 110vh;
+  margin-left: -5vw;
+  margin-top: -5vh;
   position: fixed;
+
+  animation: shake 8s infinite ease-in-out;
+
+  @keyframes shake {
+    0% {
+      transform: translate(0, 0);
+    }
+    10% {
+      transform: translate(-1px, 1px);
+    }
+    20% {
+      transform: translate(-2px, -1px);
+    }
+    30% {
+      transform: translate(1px, 2px);
+    }
+    40% {
+      transform: translate(1px, -1px);
+    }
+    50% {
+      transform: translate(-1px, 2px);
+    }
+    60% {
+      transform: translate(-2px, 1px);
+    }
+    70% {
+      transform: translate(2px, 1px);
+    }
+    80% {
+      transform: translate(-1px, -1px);
+    }
+    90% {
+      transform: translate(2px, 2px);
+    }
+    100% {
+      transform: translate(0, 0);
+    }
+  }
+`
+
+const Clouds = styled.video`
+  height: 85%;
+  margin-top: 76px;
+  width: 100%;
+  object-fit: cover;
+  filter: sepia(0.2);
+
+  animation: inverse-shake 8s infinite ease-in-out;
+
+  @keyframes inverse-shake {
+    0% {
+      transform: translate(0, 0);
+    }
+    10% {
+      transform: translate(2px, -2px);
+    }
+    20% {
+      transform: translate(4px, 2px);
+    }
+    30% {
+      transform: translate(-2px, -4px);
+    }
+    40% {
+      transform: translate(-2px, 2px);
+    }
+    50% {
+      transform: translate(2px, -4px);
+    }
+    60% {
+      transform: translate(4px, -2px);
+    }
+    70% {
+      transform: translate(-4px, -2px);
+    }
+    80% {
+      transform: translate(2px, 2px);
+    }
+    90% {
+      transform: translate(-4px, -4px);
+    }
+    100% {
+      transform: translate(0, 0);
+    }
+  }
 `
 
 const BackgroundColour = styled.div`
   width: 100%;
   height: 100%;
   /* background: linear-gradient(20deg, #a59170 0%, #ff8000 100%); */
-  background-color: rgba(255, 184, 0, 0.4);
+  /* background-color: rgb(210 188 131 / 40%); */
+  /* background: linear-gradient(235deg, rgba(236, 137, 50, 0.5) 0%, rgb(210 188 131 / 40%) 100%);
+  /* background: linear-gradient(201deg, rgb(255 161 0 / 6%) 0%, rgb(120 120 120 / 34%) 100%); */
+  background: linear-gradient(231deg, rgb(255 227 179 / 2%) 70%, rgb(79 79 79 / 64%) 100%);
+  /* background-color: rgba(255, 184, 0, 0.2); */
   background-size: 65% 100%;
   /* mix-blend-mode: multiply; */
   position: fixed;
+  top: 0;
+  left: 0;
 `
 
 const Shade = styled.div<{ $offset: number }>`
   background-color: #d7d7d7;
+  background: linear-gradient(to bottom, #d7d7d7 95%, #bebebe 100%);
   width: 100%;
   position: absolute;
   cursor: grab;
@@ -238,19 +383,20 @@ const Shade = styled.div<{ $offset: number }>`
   z-index: 1;
   margin-top: -1px;
 
+  box-shadow: 0px 10px 12px rgba(0, 0, 0, 0.2);
+
   &:active {
     cursor: grabbing;
   }
 `
 
 const ShadePull = styled.div<{ $margin: number }>`
-  height: 4px;
+  height: 6px;
   width: 30%;
   position: absolute;
   left: 35%;
   bottom: ${({ $margin }) => $margin}px;
   background-color: #c1c1c1;
-  border-radius: 2px;
 `
 
 const Background = styled.div`
@@ -258,8 +404,79 @@ const Background = styled.div`
   width: 110%;
   margin-left: -5%;
   margin-top: -5%;
-  background: linear-gradient(to top, #040308, #ad4a28, #dd723c, #fc7001, #dcb697, #9ba5ae, #3e5879, #020b1a);
+  background: linear-gradient(to top, #dcb697, #9ba5ae, #3e5879, #020b1a);
   position: absolute;
   mix-blend-mode: multiply;
-  filter: blur(10px);
+  filter: blur(1px);
+`
+
+const Overlay = styled.div`
+  z-index: 999;
+  animation: 2s steps(2) 0s infinite normal none running noise;
+  width: 200vw;
+  height: 200vh;
+  position: fixed;
+  left: -50vw;
+  top: -50vh;
+  pointer-events: none;
+  mix-blend-mode: darken;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' height='100' width='100'%3e%3cfilter id='noise'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='1.0'/%3e%3c/filter%3e%3crect filter='url(%23noise)' width='100%25' height='100%25'/%3e%3c/svg%3e");
+  background-size: 120px;
+  filter: grayscale(100%);
+  opacity: 0.4;
+  inset: -20%;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+
+  @media (orientation: portrait) {
+    display: none;
+  }
+
+  @keyframes noise {
+    0% {
+      transform: translate3d(0, 2vh, 0);
+    }
+
+    10% {
+      transform: translate3d(-1vh, -2vh, 0);
+    }
+
+    20% {
+      transform: translate3d(-4vh, 1vh, 0);
+    }
+
+    30% {
+      transform: translate3d(4.5vh, -4.5vh, 0);
+    }
+
+    40% {
+      transform: translate3d(-1vh, 3.5vh, 0);
+    }
+
+    50% {
+      transform: translate3d(-4.5vh, -2vh, 0);
+    }
+
+    60% {
+      transform: translate3d(1vh, 3vh, 0);
+    }
+
+    70% {
+      transform: translate3d(3.5vh, -4vh, 0);
+    }
+
+    80% {
+      transform: translate3d(-4.5vh, 0.5vh, 0);
+    }
+
+    90% {
+      transform: translate3d(3vh, -2.5vh, 0);
+    }
+
+    to {
+      transform: translate3d(-3.5vh, 0, 0);
+    }
+  }
 `
