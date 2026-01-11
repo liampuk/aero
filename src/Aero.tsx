@@ -280,7 +280,7 @@ export const Aero: FC = () => {
           <ShadePull $margin={minShadeSize / 3 + 2} />
         </Shade>
         <BrightBackground />
-        <Background>
+        <Background $radius={windowRadius}>
           <Clouds autoPlay loop muted playsInline style={{ height: "100%", width: "100%", objectFit: "cover" }}>
             {/* <source src="https://www.commuting.to/videos/clouds.mp4" type="video/mp4" /> */}
             <source src="/aero/clouds2.mp4" type="video/mp4" />
@@ -338,6 +338,7 @@ const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
   margin: auto;
   filter: blur(0.5px) drop-shadow(0px 0px 32px rgba(0, 0, 0, 0.4));
   /* opacity: 0.5; */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
 `
 
 const BackgroundCanvas = styled.canvas`
@@ -410,6 +411,7 @@ const Clouds = styled.video`
   margin-top: 76px;
   width: 100%;
   object-fit: cover;
+  margin-top: 0;
   filter: sepia(0.2);
 
   animation: inverse-shake 8s infinite ease-in-out;
@@ -452,16 +454,10 @@ const Clouds = styled.video`
 `
 
 const BackgroundColour = styled.div`
-  width: 100%;
-  height: 100%;
-  /* background: linear-gradient(20deg, #a59170 0%, #ff8000 100%); */
-  /* background-color: rgb(210 188 131 / 40%); */
-  /* background: linear-gradient(235deg, rgba(236, 137, 50, 0.5) 0%, rgb(210 188 131 / 40%) 100%);
-  /* background: linear-gradient(201deg, rgb(255 161 0 / 6%) 0%, rgb(120 120 120 / 34%) 100%); */
+  width: 110vw;
+  height: 110vh;
   background: linear-gradient(231deg, rgb(255 227 179 / 2%) 70%, rgb(79 79 79 / 64%) 100%);
-  /* background-color: rgba(255, 184, 0, 0.2); */
-  background-size: 65% 100%;
-  /* mix-blend-mode: multiply; */
+  background-size: 100% 100%;
   position: fixed;
   top: 0;
   left: 0;
@@ -506,7 +502,7 @@ const ShadePull = styled.div<{ $margin: number }>`
   background-color: #c1c1c1;
 `
 
-const Background = styled.div`
+const Background = styled.div<{ $radius: number }>`
   height: 110%;
   width: 110%;
   margin-left: -5%;
@@ -515,6 +511,8 @@ const Background = styled.div`
   position: absolute;
   mix-blend-mode: multiply;
   filter: blur(1px);
+  overflow: hidden;
+  border-radius: ${({ $radius }) => $radius}px;
 `
 
 const Overlay = styled.div`
