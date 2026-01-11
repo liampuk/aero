@@ -338,7 +338,11 @@ const Window = styled.div<{ $width: number; $height: number; $radius: number }>`
   margin: auto;
   filter: blur(0.5px) drop-shadow(0px 0px 32px rgba(0, 0, 0, 0.4));
   /* opacity: 0.5; */
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
+
+  @media (orientation: portrait) {
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: -webkit-radial-gradient(white, black);
+  }
 `
 
 const BackgroundCanvas = styled.canvas`
