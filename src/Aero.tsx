@@ -6,6 +6,28 @@ export const Aero: FC = () => {
   const mouseY = useRef(0)
   const offsetY = useRef(0)
 
+  const dingAudioRef = useRef<HTMLAudioElement | null>(null)
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null)
+  const bgAudioRefPlaying = useRef(false)
+
+  useEffect(() => {
+    if (!bgAudioRef.current) {
+      bgAudioRef.current = new window.Audio("/aero/airplane.mp3")
+      bgAudioRef.current.loop = true
+    }
+
+    if (!dingAudioRef.current) {
+      dingAudioRef.current = new window.Audio("/aero/ding.mp3")
+    }
+
+    return () => {
+      bgAudioRef.current?.pause()
+      dingAudioRef.current?.pause()
+      bgAudioRef.current = null
+      dingAudioRef.current = null
+    }
+  }, [])
+
   const [documentWidth, documentHeight] = useWindowSize()
   const portrait = documentWidth < documentHeight * 0.75
   const pixelRatio = window.devicePixelRatio
@@ -163,6 +185,8 @@ export const Aero: FC = () => {
       ctx.fillStyle = "white"
       ctx.fill()
     }
+
+    console.log("@@ shadePos", shadePos)
   }, [
     documentHeightPixel,
     documentWidthPixel,
@@ -173,6 +197,61 @@ export const Aero: FC = () => {
     windowRadiusPixel,
     windowWidthPixel,
   ])
+
+  useEffect(() => {
+    if (shadePos === 0) {
+      if (!dingAudioRef.current) {
+        dingAudioRef.current = new window.Audio("/aero/ding.mp3")
+      }
+      dingAudioRef.current.currentTime = 0
+      dingAudioRef.current.play()
+    }
+    if (shadePos < windowHeight - minShadeSize + 1 && !bgAudioRefPlaying.current) {
+      if (!bgAudioRef.current) {
+        bgAudioRef.current = new window.Audio("/aero/airplane.mp3")
+        bgAudioRef.current.loop = true
+      }
+      bgAudioRef.current.currentTime = 0
+      fadeIn(bgAudioRef.current)
+      bgAudioRefPlaying.current = true
+    } else if (bgAudioRef.current && shadePos === windowHeight - minShadeSize + 1) {
+      fadeOut(bgAudioRef.current)
+      bgAudioRefPlaying.current = false
+    }
+  }, [minShadeSize, shadePos, windowHeight])
+
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  function fadeIn(audio: HTMLAudioElement, duration = 1000) {
+    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current)
+    audio.volume = 0
+    audio.play()
+    const step = 0.05
+    const interval = duration / (1 / step)
+    fadeIntervalRef.current = setInterval(() => {
+      if (audio.volume < 1) {
+        audio.volume = Math.min(1, audio.volume + step)
+      } else {
+        clearInterval(fadeIntervalRef.current!)
+        fadeIntervalRef.current = null
+      }
+    }, interval)
+  }
+
+  function fadeOut(audio: HTMLAudioElement, duration = 1000) {
+    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current)
+    const step = 0.05
+    const interval = duration / (1 / step)
+    fadeIntervalRef.current = setInterval(() => {
+      if (audio.volume > 0) {
+        audio.volume = Math.max(0, audio.volume - step)
+      } else {
+        audio.pause()
+        clearInterval(fadeIntervalRef.current!)
+        fadeIntervalRef.current = null
+      }
+    }, interval)
+  }
 
   // updateLightProjection()
 

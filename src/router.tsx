@@ -6,4 +6,8 @@ export const router = createBrowserRouter([
     path: "/aero",
     element: <Aero />,
   },
+  {
+    path: "/aero/",
+    element: <Aero />,
+  },
 ])
